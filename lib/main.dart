@@ -56,7 +56,7 @@ class MyApp extends StatelessWidget {
                 scaffoldBackgroundColor: Colors.white10,
                 primarySwatch: Colors.amber
             ),
-            home: SignUp(),
+            home: UserState(),
           );
         }
 

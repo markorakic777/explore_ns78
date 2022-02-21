@@ -43,11 +43,13 @@ class _PlaceWidgetState extends State<PlaceWidget> {
       elevation: 8,
       margin: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       child: ListTile(
-        onTap: () {
+        onTap: () =>
+            () {
           Navigator.pushReplacement(context, MaterialPageRoute(
               builder: (context) =>
                   PlaceDetailsScreen(
-                      uploadedBy: widget.uploadedBy, placeId: widget.placeId)),
+                      uploadedBy: widget.uploadedBy,
+                      placeId: widget.placeId)),
           );
         },
         onLongPress: _deleteDialog(),
@@ -64,7 +66,8 @@ class _PlaceWidgetState extends State<PlaceWidget> {
           widget.placeName,
           maxLines: 2,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white10,),
+          style: TextStyle(
+            fontWeight: FontWeight.bold, color: Colors.white10,),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -90,14 +93,14 @@ class _PlaceWidgetState extends State<PlaceWidget> {
       ),
     );
   }
-
   _deleteDialog() {
     User? user = _auth.currentUser;
     final _uid=user!.uid;
     showDialog(context: context, builder: (ctx) {
       return AlertDialog(
+
         actions: [
-          TextButton(onPressed: ()async{
+          TextButton(onPressed: ()=> ()async{
             try{
         if (widget.uploadedBy == _uid) {
           await FirebaseFirestore.instance
@@ -118,6 +121,7 @@ class _PlaceWidgetState extends State<PlaceWidget> {
               GlobalMethod.showErrorDialog(error:"this place cannot be deleted", ctx: ctx);
           } finally  {}
     },
+
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [

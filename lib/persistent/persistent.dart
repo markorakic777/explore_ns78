@@ -1,7 +1,7 @@
 class Persistent{
 
 
-  static List<String> placesList = [
+  static List<String> placesCategoryList = [
     "Restaurant"
   "Caffe",
     "Bar",

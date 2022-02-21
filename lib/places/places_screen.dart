@@ -13,34 +13,33 @@ import '../persistent/persistent.dart';
 import '../widgets/bottom_navbar_widget.dart';
 import '../widgets/place_widget.dart';
 class PlacesScreen extends StatefulWidget {
-  const PlacesScreen() ;
+  const PlacesScreen({Key? key}) : super(key: key);
 
   @override
   _PlacesScreenState createState() => _PlacesScreenState();
 }
 
 class _PlacesScreenState extends State<PlacesScreen> {
-  String? placeCategoryFilter;
 
-  String ImageURL='';
+  String? placesCategoryFilter;
 
-  File? ImageFile;
 
-  String? _placeid;
+
 
   @override
   Widget build(BuildContext context) {
 
     Size size = MediaQuery.of(context).size;
+
     return Scaffold(
         bottomNavigationBar: BottomNavigationBarForApp(indexNum:0,),
         appBar: AppBar(
-          automaticallyImplyLeading: false,//??
+          automaticallyImplyLeading: false,
           backgroundColor: Colors.white,
           leading: IconButton(
             icon: Icon(Icons.filter_list_outlined,color: Colors.grey,),
             onPressed: (){
-              _showPlaceCategoriesDialog(size: size);
+              _showTaskCategoriesDialog(size: size);
             },
           ),
           actions: [
@@ -55,7 +54,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
         body: StreamBuilder<QuerySnapshot<Map<String,dynamic>>>(
           stream: FirebaseFirestore.instance
               .collection('places')
-              .where('placesCategory',isEqualTo: placeCategoryFilter)
+              .where('placesCategory',isEqualTo: placesCategoryFilter)
               .orderBy('createdAt',descending: false)
               .snapshots(),
           builder:(context,snapshot){
@@ -64,29 +63,41 @@ class _PlacesScreenState extends State<PlacesScreen> {
             }
             else if(snapshot.connectionState==ConnectionState.active) {
               if(snapshot.data?.docs.isNotEmpty==true){
-
-                return ListView.builder(
+                return  ListView.builder(
                     itemCount: snapshot.data?.docs.length,
+                    itemBuilder: (BuildContext context,int index) {
+                    return
+                    Builder(
+                      builder: (context) {
+                        return (
+                            PlaceWidget(
+                          placeName: snapshot.data?.docs[index]['name'],
+                          placeDescription: snapshot.data
+                              ?.docs[index]['description'],
+                          placeId: snapshot.data?.docs[index]['id'],
+                          uploadedBy: snapshot.data
+                              ?.docs[index]['uploadedBy'],
+                          placeImageUrl: snapshot.data
+                              ?.docs[index]['userImage'],
+                          placeLocation: snapshot.data
+                              ?.docs[index]['location'],
+                          placeEmail: snapshot.data?.docs[index]['email'],
 
-                    itemBuilder: (BuildContext context,int index){
-
-
-                      return PlaceWidget(
-                           placeId: snapshot.data?.docs[index]['placeID'],
-                           placeLocation: "novi sad",
-                           placeEmail: 'marko@marko'
-                          ,
-                          placeName: snapshot.data?.docs[index]['jobTitle'],
-                          placeDescription: snapshot.data?.docs[index]['jobDescription'],
-                          uploadedBy:  snapshot.data?.docs[index]['uploadedBy'],
-                          placeImageUrl: snapshot.data?.docs[index]['ImageURL']
-
-                      );
-                    }
+                        )
+                        );
+                      },
+                    );
+              
+                    },
                 );
-              } else {
+
+
+
+
+                
+              }else {
                 return Center(
-                  child: Text('There is no jobs'),
+                  child: Text('There is no places'),
                 );
               }
             }
@@ -103,14 +114,14 @@ class _PlacesScreenState extends State<PlacesScreen> {
 
   }
 
-  _showPlaceCategoriesDialog({required Size size}){
+  _showTaskCategoriesDialog({required Size size}){
     showDialog(
         context: context,
         builder: (ctx){
           return AlertDialog(
             backgroundColor: Colors.black,
             title: Text(
-              'Job Category',
+              'place Category',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize:20,color:Colors.white),
             ),
@@ -118,16 +129,16 @@ class _PlacesScreenState extends State<PlacesScreen> {
               width: size.width*0.9,
               child: ListView.builder(
                   shrinkWrap: true,
-                  itemCount: Persistent.placesList.length,
+                  itemCount: Persistent.placesCategoryList.length,
                   itemBuilder: (ctx,index){
                     return InkWell(
                       onTap: (){
                         setState(() {
-                          placeCategoryFilter=Persistent.placesList[index];
+                          placesCategoryFilter=Persistent.placesCategoryList[index];
                         });
                         Navigator.canPop(ctx)? Navigator.pop(ctx):null;
                         print(
-                            'jobCategoryList[index], ${Persistent.placesList[index]}'
+                            'placesCategoryList[index], ${Persistent.placesCategoryList[index]}'
 
                         );
                       },
@@ -140,7 +151,7 @@ class _PlacesScreenState extends State<PlacesScreen> {
                           Padding(
                             padding: const EdgeInsets.all(8),
                             child: Text(
-                              Persistent.placesList[index],
+                              Persistent.placesCategoryList[index],
                               style: TextStyle(
                                   color: Colors.grey,
                                   fontSize: 15,
@@ -170,9 +181,4 @@ class _PlacesScreenState extends State<PlacesScreen> {
         }
     );
   }
-
-
-
-
 }
-

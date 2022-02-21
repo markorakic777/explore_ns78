@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import '../persistent/persistent.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:explore_ns/widgets/bottom_navbar_widget.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -14,7 +14,7 @@ import '../services/global_methods.dart';
 import '../services/global_variables.dart';
 
 class UploadPlace extends StatefulWidget {
-  const UploadPlace({Key? key}) : super(key: key);
+  const UploadPlace();
 
   @override
   _UploadPlaceState createState() => _UploadPlaceState();
@@ -22,11 +22,12 @@ class UploadPlace extends StatefulWidget {
 
 class _UploadPlaceState extends State<UploadPlace> {
 
-  late File ImageFile;
-  TextEditingController _placeCategoryController = TextEditingController(
-      text: 'Select Place Type');
+   File? ImageFile;
+  TextEditingController _placesCategoryController = TextEditingController();
   TextEditingController _placeNameController = TextEditingController();
   TextEditingController _placeDescriptionController = TextEditingController();
+   TextEditingController _placeLocationController = TextEditingController();
+   TextEditingController _placeEmailController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
   DateTime? picked;
@@ -38,7 +39,7 @@ class _UploadPlaceState extends State<UploadPlace> {
 
   void dispose() {
     super.dispose();
-    _placeCategoryController.dispose();
+    _placesCategoryController.dispose();
     _placeDescriptionController.dispose();
     _placeNameController.dispose();
   }
@@ -90,6 +91,17 @@ class _UploadPlaceState extends State<UploadPlace> {
                       child:
                       Column(
                         children: [
+
+                          _textTitles(label: "Place category: "),
+                          _textFormFields(
+                              valueKey: 'category',
+                              controller: _placesCategoryController,
+                              enabled: false,
+                              fct: (){
+                                _showPlacesCategoriesDialog(size: size);
+                              },
+                              maxLength: 100
+                          ),
                           GestureDetector(
                             onTap: ()=> _showImageDialog(),
                             child: Container(
@@ -105,7 +117,7 @@ class _UploadPlaceState extends State<UploadPlace> {
                                     ? Icon(
                                     Icons.camera_enhance, color: Colors.blue,
                                     size: 30)
-                                    : Image.file(ImageFile),
+                                    : Image.file(ImageFile!),
                               ),
                             ),
                           ),
@@ -122,9 +134,29 @@ class _UploadPlaceState extends State<UploadPlace> {
                           _textFormFields(
                             valueKey: "PlaceDescription",
                             controller: _placeDescriptionController,
-                            enabled: false,
+                            enabled: true,
                             fct: () {},
                             maxLength: 2000,
+                          ),
+
+                          _textTitles(label: "Insert email"),
+                          _textFormFields(
+                            valueKey: "email",
+                            controller: _placeEmailController,
+                            enabled: true,
+                            fct: () {},
+                            maxLength: 100,
+                          ),
+
+
+
+                          _textTitles(label: "Insert location"),
+                          _textFormFields(
+                            valueKey: "location",
+                            controller: _placeLocationController,
+                            enabled: true,
+                            fct: () {},
+                            maxLength: 500,
                           ),
 
 
@@ -138,7 +170,7 @@ class _UploadPlaceState extends State<UploadPlace> {
                         child: _isLoading
                             ? CircularProgressIndicator()
                             : MaterialButton(
-                          onPressed: UploadDataAboutPlace(),
+                          onPressed: UploadDataAboutPlace,
                           color: Colors.amber,
                           elevation: 8,
                           shape: RoundedRectangleBorder(
@@ -232,10 +264,10 @@ class _UploadPlaceState extends State<UploadPlace> {
           },
           child: TextFormField(
             validator: (value) {
-              if (value!.isEmpty) {
-                return "value is missing";
+              if (value=="") {
+                color: Colors.red;
               }
-              return null;
+
             },
 
 
@@ -282,9 +314,9 @@ class _UploadPlaceState extends State<UploadPlace> {
     );
   }
 
-  UploadDataAboutPlace() {
+ UploadDataAboutPlace() async {
 
-    final isValid = _formKey.currentState!.validate();
+   final isValid = _formKey.currentState!.validate();
 
     if (isValid) {
 
@@ -302,7 +334,7 @@ class _UploadPlaceState extends State<UploadPlace> {
           _isLoading = false;
         });
 
-        return;
+
       } //If image file is null
 
 
@@ -313,22 +345,24 @@ class _UploadPlaceState extends State<UploadPlace> {
 
 
          final placeID = Uuid().v4();
-         _uploadImageToStorage( placeID) ;
+         final ref=FirebaseStorage.instance.ref().child('placesImages').child(placeID + '.jpg');
+         await ref.putFile(ImageFile!);
+         ImageURL= await ref.getDownloadURL();
          User? user = FirebaseAuth.instance.currentUser;
          final _uid = user!.uid;
-         final isValid =_formKey.currentState!.validate();
 
         FirebaseFirestore.instance.collection('places').doc(placeID).set({
           'id': placeID,
           'userImage': ImageURL,
+           'location': _placeLocationController.text,
+          'email': _placeEmailController.text,
           'name': _placeNameController.text,
           'description': _placeDescriptionController.text,
-          'category': _placeCategoryController.text,
-          'createdAt': Timestamp.now()
+          'category': _placesCategoryController.text,
+          'createdAt': Timestamp.now(),
+          'uploadedBy': _uid,
         });
-        Navigator.canPop(context)
-            ? Navigator.pop(context)
-            : null;
+
       } catch (error) {
         setState(() {
           _isLoading:
@@ -345,15 +379,72 @@ class _UploadPlaceState extends State<UploadPlace> {
     }
   }
 
-  void _uploadImageToStorage(String placeID) async {
-   final  _auth = FirebaseAuth.instance;
-    final User? user = _auth.currentUser;
-    final _uid = user!.uid;
-    final ref=FirebaseStorage.instance.ref().child('userImages').child(_uid+'.jpg');
-    await ref.putFile(ImageFile);
-    ImageURL= await ref.getDownloadURL();
 
-  }
+
+   _showPlacesCategoriesDialog({required Size size}){
+     showDialog(context: context,
+         builder: (ctx){
+           return AlertDialog(
+             backgroundColor: Colors.black,
+             title: Text(
+               'Place category',
+               textAlign: TextAlign.center,
+               style: TextStyle(fontSize: 20,color: Colors.white),
+             ),
+             content:Container (
+               width: size.width*0.9,
+               child: ListView.builder(
+                   shrinkWrap: true,
+                   itemCount: Persistent.placesCategoryList.length,
+                   itemBuilder: (ctxx,index) {
+
+                     return InkWell(
+                         onTap: (){
+                           setState(() {
+                             _placesCategoryController.text=Persistent.placesCategoryList[index];
+                           });
+                           Navigator.pop(context);
+                         },
+                         child: Row(
+
+                           children: [
+                             Icon(
+                               Icons.arrow_right_outlined,
+                               color: Colors.grey,
+                             ),
+                             Padding(
+                               padding: const EdgeInsets.all(8.0),
+                               child: Text(
+                                 Persistent.placesCategoryList[index],
+                                 style: TextStyle(
+                                   color: Colors.grey,
+                                   fontSize: 16,
+                                 ),
+                               ),
+                             )
+                           ],
+
+                         )
+                     );
+                   }
+               ),
+             ),
+             actions: [
+               TextButton(
+                 onPressed:  () {
+                   Navigator.canPop(context)? Navigator.pop(context):null;
+                 },
+                 child: Text(
+                   'Cancel',
+                   style: TextStyle(color: Colors.white,fontSize: 16),
+                 ),
+               )
+             ],
+           );
+         }
+     );
+   }
+
 
   _showImageDialog() {
 

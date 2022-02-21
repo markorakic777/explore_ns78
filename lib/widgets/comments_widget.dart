@@ -1,4 +1,4 @@
-import 'dart:html';
+//import 'dart:html';
 
 import 'package:explore_ns/search/place_profile.dart';
 import 'package:flutter/material.dart';
@@ -45,7 +45,7 @@ class _CommentWidgetState extends State< CommentWidget> {
         onTap: () {
           Navigator.pushReplacement(context, MaterialPageRoute(
               builder: (context) =>
-                  userProfileScreen(userID: widget.commenterId)));},
+                  ProfileScreen(userID: widget.commenterId)));},
           child:
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,

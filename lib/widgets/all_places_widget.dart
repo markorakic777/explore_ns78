@@ -16,7 +16,7 @@ class Place extends StatefulWidget {
    required this.placeName,
    required this.placeDescription,
     required this.placeImageUrl,
-    required this.placeEmail
+    required this.placeEmail, placeUploadedBy, uploadedBy
 });
 
 

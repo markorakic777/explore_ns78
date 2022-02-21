@@ -464,13 +464,16 @@ class _SignUpState extends State<SignUp> with TickerProviderStateMixin {
     Navigator.pop(context);
   }
 
-  void _cropImage(filePath) async{
+  Future<File?>  _cropImage(filePath) async{
     File? croppedImage = (await ImageCropper.cropImage(
       sourcePath: filePath, maxHeight:1080, maxWidth:1080
     )) as File?;
     if(croppedImage!=null) {
-      setState(() {ImageFile=croppedImage;});
-    }
+      setState((){ImageFile=croppedImage;});
+        return ImageFile;
+
+
+      }
 
 
   }
@@ -509,7 +512,8 @@ class _SignUpState extends State<SignUp> with TickerProviderStateMixin {
         );
         final User? user = _auth.currentUser;
         final _uid = user!.uid;
-        final ref=FirebaseStorage.instance.ref().child('userImages').child(_uid+'.jpg');
+        final ref=FirebaseStorage.instance.ref().child('userImages').child(_uid + '.jpg');
+
         await ref.putFile(ImageFile!);
         ImageURL= await ref.getDownloadURL();
         FirebaseFirestore.instance.collection('users').doc(_uid).set( {
@@ -521,9 +525,7 @@ class _SignUpState extends State<SignUp> with TickerProviderStateMixin {
           'name': _fullNameController.text,
           'createdAt': Timestamp.now()
         });
-        Navigator.canPop(context)
-            ? Navigator.pop(context)
-            : null;
+
       } catch(error) {
 
     setState(() {
